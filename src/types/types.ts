@@ -13,7 +13,7 @@ export interface User {
   usuariosID: number;
     email: string;
     senha: string;
-    foto: string;
+    foto: string| null ;
     nome:string;
     idUsuario: number;
   }
@@ -33,13 +33,26 @@ export interface User {
     iD_Administrador: number;
     idUsuario: number;
     usuarios?: GroupUser[];
+    participantesGrupo: ParticipanteGrupo[];
+
+
   }
   
+
+  export interface ParticipanteGrupo {
+    grupoID: number;
+    usuarioID: number;
+    nome: string;
+    foto: string ;
+    email: string;
+  }
 
   export interface GroupUser {
     nome: string;
   }
   
-
+  export interface GroupListProps {
+    item: Grupo; 
+  }
   
   

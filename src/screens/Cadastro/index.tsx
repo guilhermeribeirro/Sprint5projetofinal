@@ -1,75 +1,54 @@
-import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Button, Image, Platform, ScrollView } from 'react-native'; // Importe ScrollView
-import { StackTypes } from '../../routes/stack';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '../../routes/stack';
 import * as ImagePicker from 'expo-image-picker';
-import { MaterialIcons } from '@expo/vector-icons'; 
+import { MaterialIcons } from '@expo/vector-icons';
 import UserService from '../../services/UserService';
 import { User } from '../../types/types';
 
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
-
-const Cadastro = () => {
+const Cadastro: React.FC = () => {
   const [email, setEmail] = useState('');
   const [nome, setNome] = useState('');
   const [password, setPassword] = useState('');
   const [senhaconfirmar, setPasswordConfirm] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [image, setImage] = useState('');
-  const [emailcadastro, setEmailcadastro] = useState('');
-  const [passwordcadastro, setPasswordcadastro] = useState('');
-  const [usernameErro, setUsernameError] = useState(false);
-  const [lastUserId, setLastUserId] = useState(0);
-  const [foto, setPhoto] = useState('');
+  const [foto, setPhoto] = useState<string | undefined>(undefined);
 
-
-
-  const navigation = useNavigation<StackTypes>();
+  const navigation = useNavigation<StackNavigationProp<'Cadastro'>>();
 
   const AddUserNew = async () => {
-    if (passwordcadastro !== senhaconfirmar) {
+    if (password !== senhaconfirmar) {
       alert('As senhas não coincidem');
       return;
     }
-    const newUserId = lastUserId + 1;
+
+    const newUserId = 1; // Defina o novo ID de usuário conforme necessário
 
     const newUser: User = {
       usuariosID: newUserId,
-      email: emailcadastro,
-      senha: passwordcadastro,
+      email: email,
+      senha: password,
       nome: nome,
-      idUsuario: lastUserId + 1,
-      foto: foto,
+      idUsuario: newUserId,
+      foto: foto ?? '',
     };
-  
+
     console.log('Tentando adicionar novo usuário:', newUser);
-    
 
     const success = await UserService.addUser(newUser);
-    console.log('Resultado da tentativa de adicionar usuário:', success);
+
     if (success) {
-      setLastUserId(newUserId);
       alert('Usuário adicionado com sucesso! Você será redirecionado para a página de login');
       navigation.navigate('Login');
     } else {
-      alert('Usuário adicionado com sucesso! Você será redirecionado para a página de login');
-      navigation.navigate('Login');
+      alert('Falha ao adicionar usuário');
     }
-  };
-
-  const handleToggleForm = () => {
-    setIsRegistering(!isRegistering);
   };
 
   const handleLogin = async () => {
-    if (!email) {
-      setUsernameError(true);
-      return;
-    } else {
-      setUsernameError(false);
-    }
-
     const isValid = await UserService.validateUser(email, password);
+
     if (isValid) {
       setEmail('');
       setPassword('');
@@ -80,124 +59,132 @@ const Cadastro = () => {
   };
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
+    let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      alert('Permissão para acessar a câmera é necessária!');
+      return;
+    }
+
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
 
     console.log(result);
-  
+
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.scrollView}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Bem-vindo ao Amigo Chocolate CHOCOMATCH</Text>
-        </View>
-        <View style={styles.content}>
-          {isRegistering ? (
-            <View style={styles.formContainer}>
-              <Text style={styles.formTitle}>Entrar</Text>
-              <View style={styles.inputView}>
-                <TextInput
-                  style={styles.inputText}
-                  placeholder="Email"
-                  placeholderTextColor="#003f5c"
-                  onChangeText={(text) => setEmail(text)}
-                />
-              </View>
-              <View style={styles.inputView}>
-                <TextInput
-                  secureTextEntry
-                  style={styles.inputText}
-                  placeholder="Senha"
-                  placeholderTextColor="#003f5c"
-                  onChangeText={(text) => setPassword(text)}
-                />
-              </View>
-              <TouchableOpacity onPress={handleLogin} style={styles.loginBtn} activeOpacity={0.1}>
-                <Text style={styles.loginText}>Entrar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleToggleForm}>
-                <Text style={styles.toggleFormText}>Não tenho uma conta. Cadastrar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('EsqueciSenha')} style={styles.toggleFormText} activeOpacity={0.1}>
-                <Text style={styles.toggleFormText}>Esqueceu Senha</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.formContainer}>
-              <Text style={styles.formTitle}>Cadastro</Text>
+  const handleToggleForm = () => {
+    setIsRegistering(!isRegistering);
+  };
 
-              <TouchableOpacity onPress={pickImage} style={styles.button}>
-                <MaterialIcons name="add-a-photo" size={39} color="white" />
-                {/* Ícone de adicionar foto */}
-              </TouchableOpacity>
-              {foto && (
-                <View style={styles.imageContainer}>
-                  <Image source={{ uri: foto }} style={[styles.image, styles.borderedImage]} />
-                </View>
-              )}
-             
-              <View style={styles.inputView}>
-                <TextInput
-                  style={styles.inputText}
-                  placeholder="Nome"
-                  placeholderTextColor="#003f5c"
-                  onChangeText={(text) => setNome(text)}
-                />
-              </View>
-              <View style={styles.inputView}>
-                <TextInput
-                  style={styles.inputText}
-                  placeholder="Email"
-                  placeholderTextColor="#003f5c"
-                  onChangeText={(text) => setEmailcadastro(text)}
-                />
-              </View>
-              <View style={styles.inputView}>
-                <TextInput
-                  secureTextEntry
-                  style={styles.inputText}
-                  placeholder="Senha"
-                  placeholderTextColor="#003f5c"
-                  onChangeText={(text) => setPasswordcadastro(text)}
-                />
-              </View>
-              <View style={styles.inputView}>
-                <TextInput
-                  secureTextEntry
-                  style={styles.inputText}
-                  placeholder="Confirmar a Senha"
-                  placeholderTextColor="#003f5c"
-                  onChangeText={(text) => setPasswordConfirm(text)}
-                />
-              </View>
-              <TouchableOpacity style={styles.loginBtn} onPress={AddUserNew}>
-                <Text style={styles.loginText}>Cadastrar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleToggleForm}>
-                <Text style={styles.toggleFormText}>Já tenho uma conta. Fazer login</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Bem-vindo ao Amigo Chocolate CHOCOMATCH</Text>
       </View>
-    </ScrollView>
+      <View style={styles.content}>
+        {isRegistering ? (
+          <View style={styles.formContainer}>
+            <Text style={styles.formTitle}>Entrar</Text>
+            <View style={styles.inputView}>
+              <TextInput
+                style={styles.inputText}
+                placeholder="Email"
+                placeholderTextColor="#003f5c"
+                onChangeText={(text) => setEmail(text)}
+              />
+            </View>
+            <View style={styles.inputView}>
+              <TextInput
+                secureTextEntry
+                style={styles.inputText}
+                placeholder="Senha"
+                placeholderTextColor="#003f5c"
+                onChangeText={(text) => setPassword(text)}
+              />
+            </View>
+            <TouchableOpacity onPress={handleLogin} style={styles.loginBtn} activeOpacity={0.1}>
+              <Text style={styles.loginText}>Entrar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleToggleForm}>
+              <Text style={styles.toggleFormText}>Não tenho uma conta. Cadastrar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              
+              style={styles.toggleFormText}
+              activeOpacity={0.1}>
+              <Text style={styles.toggleFormText}>Esqueceu Senha</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.formContainer}>
+            <Text style={styles.formTitle}>Cadastro</Text>
+
+            <TouchableOpacity onPress={pickImage} style={styles.button}>
+              <MaterialIcons name="add-a-photo" size={39} color="white" />
+              {/* Ícone de adicionar foto */}
+            </TouchableOpacity>
+            {foto && (
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: foto }} style={[styles.image, styles.borderedImage]} />
+              </View>
+            )}
+
+            <View style={styles.inputView}>
+              <TextInput
+                style={styles.inputText}
+                placeholder="Nome"
+                placeholderTextColor="#003f5c"
+                onChangeText={(text) => setNome(text)}
+              />
+            </View>
+            <View style={styles.inputView}>
+              <TextInput
+                style={styles.inputText}
+                placeholder="Email"
+                placeholderTextColor="#003f5c"
+                onChangeText={(text) => setEmail(text)}
+              />
+            </View>
+            <View style={styles.inputView}>
+              <TextInput
+                secureTextEntry
+                style={styles.inputText}
+                placeholder="Senha"
+                placeholderTextColor="#003f5c"
+                onChangeText={(text) => setPassword(text)}
+              />
+            </View>
+            <View style={styles.inputView}>
+              <TextInput
+                secureTextEntry
+                style={styles.inputText}
+                placeholder="Confirmar a Senha"
+                placeholderTextColor="#003f5c"
+                onChangeText={(text) => setPasswordConfirm(text)}
+              />
+            </View>
+            <TouchableOpacity style={styles.loginBtn} onPress={AddUserNew}>
+              <Text style={styles.loginText}>Cadastrar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleToggleForm}>
+              <Text style={styles.toggleFormText}>Já tenho uma conta. Fazer login</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flexGrow: 1,
-  },
   container: {
     flex: 1,
     backgroundColor: '#c57d56',
@@ -261,9 +248,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   imageIcon: {
-    width: 30, // Defina o tamanho do ícone conforme necessário
+    width: 30,
     height: 30,
-    // Adicione outros estilos conforme necessário
   },
   button: {
     backgroundColor: '#5d2417',
@@ -275,7 +261,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 10,
     fontWeight: 'bold',
-
   },
   imageContainer: {
     alignItems: 'center',
@@ -283,12 +268,12 @@ const styles = StyleSheet.create({
   image: {
     width: 90,
     height: 90,
-    resizeMode: 'cover', 
+    resizeMode: 'cover',
   },
   borderedImage: {
-    borderWidth: 2, 
-    borderColor: 'black', 
-    borderRadius: 10, 
+    borderWidth: 2,
+    borderColor: 'black',
+    borderRadius: 10,
   },
 });
 

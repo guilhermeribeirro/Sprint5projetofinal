@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import { Button, Image, Platform, FlatList, Modal, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
-import { StackTypes } from '../../routes/stack';
+import { StackParamList } from '../../routes/stack';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
@@ -10,8 +10,10 @@ import Autocomplete from '@mui/material/Autocomplete';
 import UserService from '../../services/UserService';
 import { User }from '../../types/types';
 import  { Grupo } from '../../types/types';
-import Login from '../Login';
+import  { ParticipanteGrupo } from '../../types/types';
 import AuthService from '../../types/AuthService';
+import { DetalhesGrupoNavigationProp } from '../../routes/stack';
+
 const Inicio = () => {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [novoGrupo, setNovoGrupo] = useState('');
@@ -23,10 +25,10 @@ const Inicio = () => {
   const [dataRevelacao, setDataRevelacao] = useState('');
   const [foto, setPhoto] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [participantesGrupo, setParticipantesGrupo] = useState<ParticipanteGrupo[]>([]);
   const [isRegistering, setIsRegistering] = useState(false);
   
-
-  const navigation = useNavigation<StackTypes>();
+  const navigation = useNavigation<DetalhesGrupoNavigationProp>();
 
   const handleCriarGrupo = async () => {
     try {
@@ -43,6 +45,7 @@ const Inicio = () => {
             idUsuario: user.idUsuario,
             iD_Administrador: user.idUsuario, 
             senhaUsuario: senhaUsuario,
+            participantesGrupo: participantesGrupo,
         };
 
         const success = await UserService.createGroup(newGroup);
@@ -55,6 +58,7 @@ const Inicio = () => {
             setDescricao('');
             setPhoto('');
             setsenhaUsuario('');
+            setParticipantesGrupo([]);
             setModalVisible(false);
             await loadGrupos(user);
         } else {
@@ -65,8 +69,9 @@ const Inicio = () => {
         alert('Erro ao criar grupo. Por favor, tente novamente mais tarde.');
     }
 };
+
   const participantes = [
-    { label: '1' },
+   
     { label: '2' },
     { label: '3' },
     { label: '4' },
@@ -99,55 +104,41 @@ const Inicio = () => {
 
   const loadGrupos = async (user: User) => {
     
-      const userId = user.usuariosID;
-  
-      
-      const gruposDoUsuario = await UserService.getGruposDoUsuario(userId);
-  
-      const gruposFiltrados = gruposDoUsuario.filter(grupo => {
-        return grupo.gruposID === userId && grupo.idUsuario === user.idUsuario;
-      });
-  
-      setGrupos(gruposFiltrados);
+    const userId = user.usuariosID;
+
     
+    const gruposDoUsuario = await UserService.getGruposDoUsuario(userId);
+
+    const gruposFiltrados = gruposDoUsuario.filter(grupo => {
+      return grupo.gruposID === userId && grupo.idUsuario === user.idUsuario;
+    });
+
+    setGrupos(gruposFiltrados);
   };
-  
+
   useEffect(() => {
-    const fetchUser = async () => {
-    
+    const fetchGrupos = async () => {
+      try {
         const user: User = { usuariosID: 9, email: '', senha: '', nome: '', foto: '', idUsuario: 9 };
-        await loadGrupos(user);
-      
+        const grupos = await UserService.getGruposDoUsuario(user.usuariosID);
+        setGrupos(grupos);
+      } catch (error) {
+        console.error('Erro ao carregar grupos:', error);
+      }
     };
   
-    fetchUser();
+    fetchGrupos();
   }, []);
-  
-  useEffect(() => {
-  const fetchGrupos = async () => {
-    try {
-      const user: User = { usuariosID: 9, email: '', senha: '', nome: '', foto: '', idUsuario: 9 };
-      const grupos = await UserService.getGruposDoUsuario(user.usuariosID);
-      setGrupos(grupos);
-    } catch (error) {
-      console.error('Erro ao carregar grupos:', error);
-    }
+
+  const handleLogout = async () => {
+    await AuthService.logout();
+    navigation.navigate('Login');
   };
-
-  fetchGrupos();
-}, []);
-
-
-const handleLogout = async () => {
-  await AuthService.logout();
-  navigation.navigate('Login');
-};
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Chocolate CHOCOMATCH</Text>
-        
       </View>
       <View style={styles.content}>
         <View style={styles.formContainer}>
@@ -156,96 +147,97 @@ const handleLogout = async () => {
             <Text style={styles.loginText}> + Criar mais grupos</Text>
           </TouchableOpacity>
           <Modal
-  animationType="slide"
-  transparent={true}
-  visible={modalVisible}
-  onRequestClose={() => setModalVisible(false)}
->
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <ScrollView> {/* Adicione o ScrollView aqui */}
-        <Text style={styles.formTitle}>Criar Grupo</Text>
-        <TouchableOpacity onPress={pickImage} style={styles.button}>
-          <MaterialIcons name="add-a-photo" size={39} color="white" />
-        </TouchableOpacity>
-        {foto && (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: foto }} style={[styles.image, styles.borderedImage]} />
-          </View>
-        )}
-        <View style={styles.inputView}>
-          <TextInput
-            style={styles.inputText}
-            placeholder="Nome do Grupo"
-            placeholderTextColor="#003f5c"
-            onChangeText={(text) => setNome(text)}
-          />
-        </View>
-        <Autocomplete
-          disablePortal
-          id="combo-box-demo"
-          options={participantes}
-          sx={{ width: 350 }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Quantidade de Participantes"
-              style={{ ...styles.inputText, height: 50, backgroundColor: '#ffb48a', borderRadius: 200, marginBottom: 20, justifyContent: 'center' }}
-            />
-          )}
-          onChange={(event, value) => {
-            if (value) {
-              setQuantidadeParticipantes(value.label);
-            } else {
-              setQuantidadeParticipantes('');
-            }
-          }}
-        />
-        <View style={styles.inputView}>
-          <TextInput
-            style={styles.inputText}
-            placeholder="Valor"
-            placeholderTextColor="#003f5c"
-            onChangeText={(text) => setValor(text)}
-          />
-        </View>
-        <View style={styles.inputView}>
-          <TextInput
-            style={styles.inputText}
-            placeholder="Data Revelação (dd/mm/aaaa)"
-            placeholderTextColor="#003f5c"
-            onChangeText={(text) => handleDateInputChange(text)}
-            keyboardType="numeric"
-            maxLength={10}
-          />
-        </View>
-        <View style={styles.descricao}>
-          <TextInput
-            style={styles.inputText}
-            placeholder="Descrição"
-            placeholderTextColor="#003f5c"
-            onChangeText={(text) => setDescricao(text)}
-          />
-        </View>
-        <TouchableOpacity style={styles.closeBtn} onPress={handleCriarGrupo}>
-          <Text style={styles.closeText}>Adicionar Grupo</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-          <Text style={styles.closeText}>Fechar</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
-  </View>s
-</Modal>
-<Text style={styles.formSubTitle}>Grupos disponíveis na Rede</Text>
-<FlatList
-      data={grupos}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.groupItem}
-          onPress={() => navigation.navigate('DetalhesGrupo')}
-        >
-          <Image
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <ScrollView> 
+                  <Text style={styles.formTitle}>Criar Grupo</Text>
+                  <TouchableOpacity onPress={pickImage} style={styles.button}>
+                    <MaterialIcons name="add-a-photo" size={39} color="white" />
+                  </TouchableOpacity>
+                  {foto && (
+                    <View style={styles.imageContainer}>
+                      <Image source={{ uri: foto }} style={[styles.image, styles.borderedImage]} />
+                    </View>
+                  )}
+                  <View style={styles.inputView}>
+                    <TextInput
+                      style={styles.inputText}
+                      placeholder="Nome do Grupo"
+                      placeholderTextColor="#003f5c"
+                      onChangeText={(text) => setNome(text)}
+                    />
+                  </View>
+                  <Autocomplete
+                    disablePortal
+                    id="combo-box-demo"
+                    options={participantes}
+                    sx={{ width: 350 }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Quantidade de Participantes"
+                        style={{ ...styles.inputText, height: 50, backgroundColor: '#ffb48a', borderRadius: 200, marginBottom: 20, justifyContent: 'center' }}
+                      />
+                    )}
+                    onChange={(event, value) => {
+                      if (value) {
+                        setQuantidadeParticipantes(value.label);
+                      } else {
+                        setQuantidadeParticipantes('');
+                      }
+                    }}
+                  />
+                  <View style={styles.inputView}>
+                    <TextInput
+                      style={styles.inputText}
+                      placeholder="Valor"
+                      placeholderTextColor="#003f5c"
+                      onChangeText={(text) => setValor(text)}
+                    />
+                  </View>
+                  <View style={styles.inputView}>
+                    <TextInput
+                      style={styles.inputText}
+                      placeholder="Data Revelação (dd/mm/aaaa)"
+                      placeholderTextColor="#003f5c"
+                      onChangeText={(text) => handleDateInputChange(text)}
+                      keyboardType="numeric"
+                      maxLength={10}
+                    />
+                  </View>
+                  <View style={styles.descricao}>
+                    <TextInput
+                      style={styles.inputText}
+                      placeholder="Descrição"
+                      placeholderTextColor="#003f5c"
+                      onChangeText={(text) => setDescricao(text)}
+                    />
+                  </View>
+                  <TouchableOpacity style={styles.closeBtn} onPress={handleCriarGrupo}>
+                    <Text style={styles.closeText}>Adicionar Grupo</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+                    <Text style={styles.closeText}>Fechar</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
+          <Text style={styles.formSubTitle}>Grupos disponíveis na Rede</Text>
+          <FlatList
+            data={grupos}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.groupItem}
+                onPress={() => navigation.navigate('DetalhesGrupo', { nomeGrupo: item.nomeGrupo })}
+              >
+                <Text>{item.nomeGrupo}</Text>
+                <Image
             source={{ uri: item.foto }}
             style={{ width: 50, height: 50, borderRadius: 35, alignSelf: 'center' }}
           />
@@ -255,18 +247,14 @@ const handleLogout = async () => {
           <Text style={styles.subtitleItem}>Data Revelação: {item.dataRevelacao}</Text>
           <Text style={styles.subtitleItem}>Descrição: {item.descricao}</Text>
         </TouchableOpacity>
-      )}
-      keyExtractor={(item, index) => index.toString()}
-    />
-            <TouchableOpacity
-      onPress={() => navigation.navigate('Login')}
-      style={[styles.loginBtn, { marginTop: 20 }]}
-    >
-      <Text style={styles.loginText}>Sair</Text>
-    </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.gruposID.toString()}
+          />
         </View>
       </View>
+      
     </ScrollView>
+
   );
 };
 
@@ -414,5 +402,4 @@ const styles = StyleSheet.create({
     borderRadius: 10, 
   },
 });
-
 export default Inicio;
