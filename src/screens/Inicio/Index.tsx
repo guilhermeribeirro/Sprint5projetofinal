@@ -10,12 +10,13 @@ import Autocomplete from '@mui/material/Autocomplete';
 import UserService from '../../services/UserService';
 import { User }from '../../types/types';
 import  { Grupo } from '../../types/types';
+import  { Grupo2 } from '../../types/types';
 import  { ParticipanteGrupo } from '../../types/types';
 import AuthService from '../../types/AuthService';
 import { DetalhesGrupoNavigationProp } from '../../routes/stack';
 
 const Inicio = () => {
-  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [grupos, setGrupos] = useState<Grupo2[]>([]);
   const [novoGrupo, setNovoGrupo] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [participantesMax, setQuantidadeParticipantes] = useState('');
@@ -34,7 +35,7 @@ const Inicio = () => {
     try {
         const user: User = { usuariosID: 9, email: '', senha: '', nome: '', idUsuario: 9, foto: '' };
 
-        const newGroup: Grupo = {
+        const newGroup: Grupo2 = {
             gruposID: 0, // ID será gerado pela API
             nomeGrupo: nomeGrupo,
             participantesMax: participantesMax,
@@ -45,7 +46,6 @@ const Inicio = () => {
             idUsuario: user.idUsuario,
             iD_Administrador: user.idUsuario, 
             senhaUsuario: senhaUsuario,
-            participantesGrupo: participantesGrupo,
         };
 
         const success = await UserService.createGroup(newGroup);
@@ -58,7 +58,6 @@ const Inicio = () => {
             setDescricao('');
             setPhoto('');
             setsenhaUsuario('');
-            setParticipantesGrupo([]);
             setModalVisible(false);
             await loadGrupos(user);
         } else {
@@ -69,9 +68,8 @@ const Inicio = () => {
         alert('Erro ao criar grupo. Por favor, tente novamente mais tarde.');
     }
 };
-
   const participantes = [
-   
+
     { label: '2' },
     { label: '3' },
     { label: '4' },
@@ -101,6 +99,7 @@ const Inicio = () => {
       setDataRevelacao(text);
     }
   };
+
 
   const loadGrupos = async (user: User) => {
     
@@ -236,7 +235,7 @@ const Inicio = () => {
                 style={styles.groupItem}
                 onPress={() => navigation.navigate('DetalhesGrupo', { nomeGrupo: item.nomeGrupo })}
               >
-                <Text>{item.nomeGrupo}</Text>
+                //{item.nomeGrupo}
                 <Image
             source={{ uri: item.foto }}
             style={{ width: 50, height: 50, borderRadius: 35, alignSelf: 'center' }}
@@ -250,8 +249,13 @@ const Inicio = () => {
             )}
             keyExtractor={(item) => item.gruposID.toString()}
           />
+
+              <TouchableOpacity style={styles.loginBtn} onPress={() => handleLogout}>
+            <Text style={styles.loginText}> Sair</Text>
+          </TouchableOpacity>
         </View>
       </View>
+    
       
     </ScrollView>
 

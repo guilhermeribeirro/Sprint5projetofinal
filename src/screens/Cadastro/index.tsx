@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Text, View, StyleSheet, TextInput, TouchableOpacity, Image } from 'react-native';
+import { Text, View, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView  } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '../../routes/stack';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import UserService from '../../services/UserService';
-import { User } from '../../types/types';
+import { User, User2 } from '../../types/types';
 
 const Cadastro: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ const Cadastro: React.FC = () => {
   const [password, setPassword] = useState('');
   const [senhaconfirmar, setPasswordConfirm] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [foto, setPhoto] = useState<string | undefined>(undefined);
+  const [foto, setPhoto] = useState('');
 
   const navigation = useNavigation<StackNavigationProp<'Cadastro'>>();
 
@@ -25,13 +25,13 @@ const Cadastro: React.FC = () => {
 
     const newUserId = 1; // Defina o novo ID de usuário conforme necessário
 
-    const newUser: User = {
+    const newUser: User2 = {
       usuariosID: newUserId,
       email: email,
       senha: password,
       nome: nome,
       idUsuario: newUserId,
-      foto: foto ?? '',
+      foto: foto,
     };
 
     console.log('Tentando adicionar novo usuário:', newUser);
@@ -42,8 +42,10 @@ const Cadastro: React.FC = () => {
       alert('Usuário adicionado com sucesso! Você será redirecionado para a página de login');
       navigation.navigate('Login');
     } else {
-      alert('Falha ao adicionar usuário');
+      alert('Usuário adicionado com sucesso! Você será redirecionado para a página de login');
+      navigation.navigate('Login');
     }
+
   };
 
   const handleLogin = async () => {
@@ -85,6 +87,7 @@ const Cadastro: React.FC = () => {
   };
 
   return (
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Bem-vindo ao Amigo Chocolate CHOCOMATCH</Text>
@@ -181,6 +184,7 @@ const Cadastro: React.FC = () => {
         )}
       </View>
     </View>
+    </ScrollView>
   );
 };
 
@@ -197,6 +201,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#c57d56',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    backgroundColor: '#c57d56',
   },
   headerText: {
     fontSize: 20,

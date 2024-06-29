@@ -9,7 +9,6 @@ import * as ImagePicker from 'expo-image-picker';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import axios from 'axios';
-import Convite from '../screens/Convite/Index';
 
 type DetalhesGrupoRouteProp = RouteProp<StackParamList, 'DetalhesGrupo'>;
 
@@ -20,6 +19,7 @@ const DetalhesGrupo = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisible2, setModalVisible2] = useState(false);
+  const [modalVisible3, setModalVisible3] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [usuarios, setUsuarios] = useState<User[]>([]);
@@ -28,6 +28,8 @@ const DetalhesGrupo = () => {
   const [email, setEmail] = useState('');
   const [grupoId, setGrupoId] = useState('');
   const [mensagem, setMensagem] = useState('');
+  const [resultadoSorteio, setResultadoSorteio] = useState<User[][]>([]);
+
   useEffect(() => {
     const fetchGrupo = async () => {
       try {
@@ -50,15 +52,13 @@ const DetalhesGrupo = () => {
     fetchGrupo();
   }, [nomeGrupo]);
 
-
-
   useEffect(() => {
     fetchGrupos();
   }, []);
+
   useEffect(() => {
     fetchUsuarios();
   }, []);
-
 
   const handleEnviarConvite = async () => {
     try {
@@ -70,22 +70,21 @@ const DetalhesGrupo = () => {
       alert('Convite enviado com sucesso!');
       setEmail('');
       setGrupoId('');
-      //setMensagem('');
+      setMensagem('');
     } catch (error) {
       console.error('Erro ao enviar convite:', error);
       alert('Erro ao enviar convite');
     }
   };
-  
+
   const fetchGrupos = async () => {
     try {
       const response = await axios.get<Grupo[]>('https://localhost:7217/api/Grupos/TodosGrupos');
       setGrupos(response.data);
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
+      console.error('Erro ao buscar grupos:', error);
     }
   };
-
 
   const adicionarUsuarioAoGrupo = async (grupoID: number, usuarioID: number) => {
     try {
@@ -97,10 +96,9 @@ const DetalhesGrupo = () => {
       return response.data;
     } catch (error) {
       console.error('Erro ao adicionar usuário ao grupo:', error);
-      throw new Error('Erro ao adicionar usuário ao grupooo');
+      throw new Error('Erro ao adicionar usuário ao grupo');
     }
   };
-  
 
   const fetchUsuarios = async () => {
     try {
@@ -111,9 +109,19 @@ const DetalhesGrupo = () => {
     }
   };
 
+  const realizarSorteio = () => {
+    const shuffledUsuarios = [...users].sort(() => Math.random() - 0.5);
+    const pares = [];
+    for (let i = 0; i < shuffledUsuarios.length; i += 2) {
+      const par = [shuffledUsuarios[i], shuffledUsuarios[i + 1]];
+      pares.push(par);
+    }
+    setResultadoSorteio(pares);
+  };
+
   const AdicionarUsuarios = async () => {
     if (!selectedgrupo || !selectedUsuario) {
-      alert('Selecione um usuário');
+      alert('Selecione um usuário e um grupo');
       return;
     }
   
@@ -143,11 +151,9 @@ const DetalhesGrupo = () => {
         idUsuario: selectedUsuario.usuariosID
       }]);
     } finally {
-      setIsLoading(true);
+      setIsLoading(false);
     }
   };
-  
-  
 
   if (!grupo) {
     return <Text>Carregando...</Text>;
@@ -188,8 +194,8 @@ const DetalhesGrupo = () => {
           <Text style={styles.loginText}> + Adicionar Usuários</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.loginBtn} onPress={() => setModalVisible2(true)}>
-                  <Text style={styles.loginText}>Convite</Text>
-                </TouchableOpacity>
+          <Text style={styles.loginText}>Convite</Text>
+        </TouchableOpacity>
         <Modal
           animationType="slide"
           transparent={true}
@@ -201,73 +207,65 @@ const DetalhesGrupo = () => {
               <ScrollView>
                 <Text style={styles.formTitle}>Usuários Cadastrados</Text>
                 <Autocomplete
-                    disablePortal
-                    id="combo-box-demo"
-                    options={usuarios}
-                    getOptionLabel={(option) => option.nome}
-                    sx={{ width: 350 }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Usuarios Cadastrados"
-                        style={{
-                          ...styles.inputView,
-                          height: 50,
-                          backgroundColor: '#ffb48a',
-                          borderRadius: 200,
-                          marginBottom: 20,
-                          justifyContent: 'center',
-                        }}
-                      />
-                    )}
-                    onChange={(event, value) => {
-                      setSelectedUsuario(value);
-                    }}
-                  />
-                  <Autocomplete
-                    disablePortal
-                    id="combo-box-demo"
-                    options={grupos}
-                    getOptionLabel={(option) => option.nomeGrupo}
-                    sx={{ width: 350 }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Grupo que será adicionado"
-                        style={{
-                          ...styles.inputView,
-                          height: 50,
-                          backgroundColor: '#ffb48a',
-                          borderRadius: 200,
-                          marginBottom: 20,
-                          justifyContent: 'center',
-                        }}
-                      />
-                    )}
-                    onChange={(event, value) => {
-                      setSelectedGrupo(value);
-                    }}
-                  />
-                
-                <TouchableOpacity style={styles.closeBtn} onPress={AdicionarUsuarios}>
-                  {isLoading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.closeText}>Adicionar Pessoa ao Grupo</Text>
+                  disablePortal
+                  id="combo-box-demo"
+                  options={usuarios}
+                  getOptionLabel={(option) => option.nome}
+                  sx={{ width: 350 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Usuarios Cadastrados"
+                      style={{
+                        ...styles.inputView,
+                        height: 50,
+                        backgroundColor: '#ffb48a',
+                        borderRadius: 200,
+                        marginBottom: 20,
+                        justifyContent: 'center',
+                      }}
+                    />
                   )}
-                </TouchableOpacity>
-             
-                <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeText}>Fechar</Text>
-                </TouchableOpacity>
+                  onChange={(event, value) => {
+                    setSelectedUsuario(value);
+                  }}
+                />
+                <Autocomplete
+                  disablePortal
+                  id="combo-box-demo"
+                  options={grupos}
+                  getOptionLabel={(option) => option.nomeGrupo}
+                  sx={{ width: 350 }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Grupo que será adicionado"
+                      style={{
+                        ...styles.inputView,
+                        height: 50,
+                        backgroundColor: '#ffb48a',
+                        borderRadius: 200,
+                        marginBottom: 20,
+                        justifyContent: 'center',
+                      }}
+                    />
+                  )}
+                  onChange={(event, value) => {
+                    setSelectedGrupo(value);
+                  }}
+                />
+                <Button
+                  title="Adicionar ao Grupo"
+                  onPress={AdicionarUsuarios}
+                  disabled={isLoading}
+                />
+                {isLoading && <ActivityIndicator size="large" color="#0000ff" />}
               </ScrollView>
+              <Button title="Fechar" onPress={() => setModalVisible(false)} />
             </View>
           </View>
         </Modal>
-      </View>
-
-      <View>
-      <Modal
+        <Modal
           animationType="slide"
           transparent={true}
           visible={modalVisible2}
@@ -276,41 +274,55 @@ const DetalhesGrupo = () => {
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <ScrollView>
-                <Text style={styles.formTitle}>Convite Usuarios</Text>
-                <View style={styles.inputView}>
-                    <TextInput
-                      style={styles.inputText}
-                      placeholder="Email Destinatário"
-                      placeholderTextColor="#003f5c"
-                      onChangeText={(text) => setEmail(text)}
-                    />
-                  </View>
-                  
-                  <View style={styles.inputView}>
-                    <TextInput
-                      style={styles.inputText}
-                      placeholder="ID do grupo"
-                      placeholderTextColor="#003f5c"
-                      onChangeText={(text) => setGrupoId(text)}
-                    />
-                  </View>
-                  
-                <TouchableOpacity style={styles.closeBtn} onPress={handleEnviarConvite}>
-                  {isLoading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.closeText}>Enviar email</Text>
-                  )}
-                </TouchableOpacity>
-             
-                <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible2(false)}>
-                  <Text style={styles.closeText}>Fechar</Text>
-                </TouchableOpacity>
+                <Text style={styles.formTitle}>Enviar Convite</Text>
+                <TextInput
+                  style={styles.inputView}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+                <TextInput
+                  style={styles.inputView}
+                  placeholder="ID do Grupo"
+                  value={grupoId}
+                  onChangeText={setGrupoId}
+                />
+                <TextInput
+                  style={styles.inputView}
+                  placeholder="Mensagem"
+                  value={mensagem}
+                  onChangeText={setMensagem}
+                />
+                <Button title="Enviar Convite" onPress={handleEnviarConvite} />
               </ScrollView>
+              <Button title="Fechar" onPress={() => setModalVisible2(false)} />
             </View>
           </View>
-        </Modal> 
-
+        </Modal>
+        <TouchableOpacity style={styles.loginBtn} onPress={realizarSorteio}>
+          <Text style={styles.loginText}>Realizar Sorteio</Text>
+        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Resultado do Sorteio</Text>
+        {resultadoSorteio.length > 0 ? (
+          resultadoSorteio.map((par, index) => (
+            <View key={index} style={styles.groupItem}>
+              {par[0] && (
+                <>
+                  <Text>{par[0].nome}</Text>
+                  {par[0].foto && <Image source={{ uri: par[0].foto }} style={{ width: 50, height: 50, borderRadius: 35 }} />}
+                </>
+              )}
+              {par[1] && (
+                <>
+                  <Text>{par[1].nome}</Text>
+                  {par[1].foto && <Image source={{ uri: par[1].foto }} style={{ width: 50, height: 50, borderRadius: 35 }} />}
+                </>
+              )}
+            </View>
+          ))
+        ) : (
+          <Text>Nenhum sorteio realizado ainda.</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -319,67 +331,41 @@ const DetalhesGrupo = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#c57d56',
   },
   groupTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#000000',
+    margin: 10,
     textAlign: 'center',
   },
   groupImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignSelf: 'center',
   },
   groupDetail: {
     fontSize: 16,
-    marginBottom: 5,
-    color: '#000000',
-    fontWeight: 'bold',
-  },
-  Tituloitem: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: 'black',
-    fontWeight: 'bold',
+    margin: 5,
+    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
-    color: '#000000',
+    margin: 10,
     textAlign: 'center',
   },
-  inputText: {
-    height: 40,
-    color: 'black',
-  },
-  userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 8,
-    elevation: 2,
-  },
   groupItem: {
+    padding: 10,
+    marginVertical: 8,
+    marginHorizontal: 16,
     backgroundColor: '#ffb48a',
     borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
+    alignItems: 'center',
   },
-  
-  userImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
+  Tituloitem: {
+    fontSize: 16,
   },
   loginBtn: {
     width: '80%',
@@ -388,13 +374,13 @@ const styles = StyleSheet.create({
     height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 20,
     marginBottom: 10,
     alignSelf: 'center',
   },
   loginText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontSize: 16,
   },
   modalContainer: {
     flex: 1,
@@ -403,39 +389,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
+    width: '80%',
     backgroundColor: 'white',
-    borderRadius: 10,
     padding: 20,
+    borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   formTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#000000',
   },
   inputView: {
-    backgroundColor: 'white',
+    width: '100%',
+    backgroundColor: '#ffb48a',
     borderRadius: 25,
     height: 50,
     marginBottom: 20,
     justifyContent: 'center',
     padding: 20,
-    elevation: 2,
-  },
-  closeBtn: {
-    width: '100%',
-    backgroundColor: '#5d2417',
-    borderRadius: 25,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  closeText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
 });
 

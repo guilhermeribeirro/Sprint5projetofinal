@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { Grupo, User } from '../types/types';
+import { Grupo, Grupo2, User, User2 } from '../types/types';
 
 const BASE_URL = 'https://localhost:7217/api/Usuarios/TodosUsuarios';
 const apiUrl = 'https://localhost:7217/api/Grupos';
@@ -12,35 +12,37 @@ class UserService {
     // Se necessário, adicione inicializações aqui
   }
 
-  async createGroup(groupData: Grupo): Promise<boolean> {
+  
+  async createGroup(groupData: Grupo2): Promise<boolean> {
     try {
-      const formData = new FormData();
-      formData.append('nomeGrupo', groupData.nomeGrupo);
-      formData.append('participantesMax', groupData.participantesMax.toString());
-      formData.append('valor', groupData.valor);
-      formData.append('dataRevelacao', groupData.dataRevelacao);
-      formData.append('descricao', groupData.descricao);
-      formData.append('iD_Administrador', groupData.iD_Administrador.toString());
-      formData.append('senhaUsuario', groupData.senhaUsuario);
+        const formData = new FormData();
+        formData.append('nomeGrupo', groupData.nomeGrupo);
+        formData.append('participantesMax', groupData.participantesMax.toString());
+        formData.append('valor', groupData.valor);
+        formData.append('dataRevelacao', groupData.dataRevelacao);
+        formData.append('descricao', groupData.descricao);
+        formData.append('iD_Administrador', groupData.iD_Administrador.toString());
+        formData.append('senhaUsuario', groupData.senhaUsuario);
 
-      if (groupData.foto) {
-        const response = await fetch(groupData.foto);
-        const blob = await response.blob();
-        formData.append('foto', blob, 'photo.jpg');
-      }
+        if (groupData.foto) {
+            const response = await fetch(groupData.foto);
+            const blob = await response.blob();
+            formData.append('foto', blob, 'photo.jpg');
+        }
 
-      const response = await axios.post(`https://localhost:7217/api/Grupos/AdicionarGrupo`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+        const response = await axios.post(cadastGrupoApi, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
 
-      return response.status === 200;
+        return response.status === 200;
     } catch (error) {
-      console.error('Erro ao criar grupo:', error);
-      return false;
+        console.error('Erro ao criar grupo:', error);
+        return false;
     }
-  }
+}
+
 
   async registerUser(user: User): Promise<boolean> {
     try {
@@ -57,19 +59,19 @@ class UserService {
     }
   }
 
-  async addUser(user: User): Promise<boolean> {
+  async addUser(user: User2): Promise<boolean> {
     try {
       const formData = new FormData();
       formData.append('email', user.email);
       formData.append('senha', user.senha);
       formData.append('nome', user.nome);
-
+      
       if (user.foto) {
         const response = await fetch(user.foto);
         const blob = await response.blob();
         formData.append('foto', blob, 'photo.jpg');
       }
-
+  
       const response = await axios.post(`${B_URL}/Usuarios/AdicionarUsuario`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',

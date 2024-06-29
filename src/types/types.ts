@@ -18,7 +18,15 @@ export interface User {
     idUsuario: number;
   }
 
-
+  export interface User2 {
+    usuariosID: number;
+      email: string;
+      senha: string;
+      foto: string;
+      nome:string;
+      idUsuario: number;
+    }
+  
 
   
   export interface Grupo {
@@ -36,6 +44,22 @@ export interface User {
     participantesGrupo: ParticipanteGrupo[];
 
 
+  }
+
+
+  export interface Grupo2 {
+    gruposID: number; 
+    nomeGrupo: string;
+    participantesMax: string;
+    valor: string;
+    dataRevelacao: string;
+    foto: string;
+    senhaUsuario: string;
+    descricao: string;
+    iD_Administrador: number;
+    idUsuario: number;
+    usuarios?: GroupUser[];
+  
   }
   
 
